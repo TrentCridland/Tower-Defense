@@ -1,8 +1,8 @@
-import pygame
-import math
+import pygame, math
 
 from tower_aiming import point_enemy
 from map_sys import map
+import constants
 
 # TO-DO LIST
 # 1. make various ui stuff
@@ -32,34 +32,34 @@ stat_font = pygame.font.SysFont('Arial', 30)
 
 # just defining variables, nothing to look at
 placing_tower = False
-money = 100
-hp = 100
+money, hp = constants.stat_constants()
 
-
+path, movement_nodes, map_offsets = map("path1")
 
 # defines the class Enemies
 class Enemies(pygame.sprite.Sprite):
-    def __init__(self, enemy, x, y):
+    image_path = ["main/enemy_images/", "_enemy.png"]
+    def __init__(self, enemy : str, x : int, y : int):
         super().__init__()
 
         self.enemy = enemy
 
-        self.x = x
-        self.y = y
+        self.x = float(x)
+        self.y = float(y)
+
+        # default info
+        info = constants.enemy_constants()[0]
 
         # checks which type of enemy was spawned
         if enemy == "basic":
-            self.image = pygame.image.load("main/enemy_images/enemy1.png")
-            self.tier = 1
-            self.speed = 1
-            self.hp = 1
+            info = constants.enemy_constants()[0]
+        elif enemy == "tank":
+            info = constants.enemy_constants()[1]
 
-        if enemy == "tank":
-            self.image = pygame.image.load("main/b_bullet.png")
-            self.tier = 1
-            self.speed = 0.5
-            self.hp = 100
-
+        self.image = pygame.image.load(self.image_path[0]+enemy+self.image_path[1]) # ignore this right now
+        self.tier : str = str(info[1])
+        self.speed : float = float(info[2])
+        self.hp : float = float(info[3])
         self.max_hp = self.hp
 
         self.rect = self.image.get_rect(center=(x, y))
@@ -81,8 +81,8 @@ class Enemies(pygame.sprite.Sprite):
             self.x += dx/magnitude * self.speed
             self.y += dy/magnitude * self.speed
 
-            self.rect.centerx = self.x
-            self.rect.centery = self.y
+            self.rect.centerx = int(self.x)
+            self.rect.centery = int(self.y)
 
             # determines if the enemy actually made it to it's destination
             if (dx >= 0 and self.rect.centerx >= destination[0]) and (dy >= 0 and self.rect.centery >= destination[1]):
@@ -110,13 +110,15 @@ class Enemies(pygame.sprite.Sprite):
             # returns the amount of damage to deal
             return self.tier
         
-    def damage(self, damage):
+    def damage(self, damage : float):
         self.hp -= damage
+        if not self.hp > 0:
+            self.kill()
 
 
 # defines the class Towers
 class Towers(pygame.sprite.Sprite):
-    def __init__(self, tower, x, y):
+    def __init__(self, tower : str, x : int, y : int):
         super().__init__()
 
         self.tower = tower
@@ -141,8 +143,8 @@ class Towers(pygame.sprite.Sprite):
         self.cd = 0
         # towers rotational speed
         self.r_speed = 0
-        # enemy to target
-        self.targeting_mode = ""
+        # targeting mode(default is efficient)
+        self.targeting_mode = "first"
 
         # checks which type of tower was spawned
         # you can add more towers using these variables
@@ -150,7 +152,6 @@ class Towers(pygame.sprite.Sprite):
             self.dmg = 1
             self.cd = 60
             self.r_speed = 1000000
-            self.targeting_mode = "strong"
 
         # makes sure there is no firing cooldown on placement
         self.wait = self.cd
@@ -220,9 +221,10 @@ class Towers(pygame.sprite.Sprite):
             if self.targeting_mode == "closest":
                 distance = 99999
                 closest_distance = distance
-                for sprite in enemies:
-                    dx = sprite.rect.centerx - self.rect.centerx
-                    dy = sprite.rect.centery - self.rect.centery
+                
+                for sprite in enemies: # type: ignore
+                    dx : int = int(sprite.rect.centerx) - self.rect.centerx # type: ignore
+                    dy : int = int(sprite.rect.centery) - self.rect.centery # type: ignore
                     distance = math.sqrt(dx*dx + dy*dy)
 
                     x += 1
@@ -232,11 +234,11 @@ class Towers(pygame.sprite.Sprite):
                         closest_id = x
 
             # targets the most "efficient" enemy; whichever enemy is fastest to shoot
-            elif self.targeting_mode == "efficiency":
+            elif self.targeting_mode == "efficiency" or self.targeting_mode == "default":
                 dr = 99999
                 lowest_dr = dr
-                for sprite in enemies:
-                    self.rotation_angle = point_enemy(self.rect.centerx, self.rect.centery, sprite.rect.centerx, sprite.rect.centery)
+                for sprite in enemies: # type: ignore
+                    self.rotation_angle = point_enemy(self.rect.centerx, self.rect.centery, sprite.rect.centerx, sprite.rect.centery) # type: ignore
                     dr = self.rotation_angle - self.current_angle
             
                     x += 1
@@ -247,20 +249,20 @@ class Towers(pygame.sprite.Sprite):
 
             # targets the furthest most enemy in range
             elif self.targeting_mode == "first":
-                if len(enemies) > 0:
+                if len(enemies) > 0: # type: ignore
                     closest_id = 1
 
             # targets the furthest back enemy in range
             elif self.targeting_mode == "last":
-                closest_id = len(enemies)
+                closest_id = len(enemies) # type: ignore
 
             # targets the enemy with the most hp
             elif self.targeting_mode == "strong":
                 e_hp = 0
                 highest_e_hp = e_hp
-                for sprite in enemies:
+                for sprite in enemies: # type: ignore
                     x += 1
-                    e_hp = sprite.max_hp
+                    e_hp = float(sprite.max_hp) # type: ignore
                     if e_hp > highest_e_hp:
                         highest_e_hp = e_hp
                         closest_id = x
@@ -268,13 +270,13 @@ class Towers(pygame.sprite.Sprite):
             # makes sure there are enemies within tower range
             if closest_id != 0:
                 # gets a list format of the enemies group
-                enemy_list = enemies.sprites()
+                enemy_list = enemies.sprites() # type: ignore
                 # finds the angle to targeted enemy
-                self.rotation_angle = point_enemy(self.rect.centerx, self.rect.centery, enemy_list[closest_id-1].rect.centerx, enemy_list[closest_id-1].rect.centery)
+                self.rotation_angle = point_enemy(self.rect.centerx, self.rect.centery, int(enemy_list[closest_id-1].rect.centerx), int(enemy_list[closest_id-1].rect.centery)) # type: ignore
                 # checks if firing cooldown is over and that the tower is rotated within 4 degrees of the enemy
                 if self.wait >= self.cd and self.current_angle >= self.rotation_angle-2 and self.current_angle <= self.rotation_angle+2:
                     # kills the targeted enemy
-                    enemy_list[closest_id-1].damage(self.dmg)
+                    enemy_list[closest_id-1].damage(self.dmg) # type: ignore
                     self.shoot_enemy = False
                     self.firing = True
                     self.wait = 0
@@ -284,7 +286,7 @@ class Towers(pygame.sprite.Sprite):
 # defines the Tower_Projectiles class
 # CURRENTLY OBSOLETE(most likely will not be added again)
 class Tower_Projectiles(pygame.sprite.Sprite):
-    def __init__(self, projectile, x, y, angle):    
+    def __init__(self, projectile : str, x : int, y : int, angle : float):    
         super().__init__()
 
         self.projectile = projectile
@@ -323,18 +325,18 @@ class Tower_Projectiles(pygame.sprite.Sprite):
         self.x += dx/magnitude * self.speed
         self.y += dy/magnitude * self.speed
 
-        self.rect.centerx = self.x
-        self.rect.centery = self.y
+        self.rect.centerx = int(self.x)
+        self.rect.centery = int(self.y)
 
         screen.blit(self.r_image, (self.rect.x+x_offset, self.rect.y-y_offset))
 
-        for sprite in enemies:
-            if self.rect.colliderect(sprite.rect):
-                sprite.kill()
+        for sprite in enemies: # type: ignore
+            if self.rect.colliderect(sprite.rect): # type: ignore
+                sprite.kill() # type: ignore
 
 # defines the class Shop
 class Shop(pygame.sprite.Sprite):
-    def __init__(self, shop, x, y):
+    def __init__(self, shop : str, x : int, y : int):
         super().__init__()
 
         self.shop = shop
@@ -374,7 +376,7 @@ class Shop(pygame.sprite.Sprite):
         return self.open
 
     # checks if the shop is open and if so, displays all the items in the shop
-    def showing(self, open):
+    def showing(self, open : bool):
         if open:
             screen.blit(self.image, self.rect)
             screen.blit(self.text, (self.rect.centerx-self.text.get_width()/2, self.rect.centery+self.rect.height/2))
@@ -382,11 +384,15 @@ class Shop(pygame.sprite.Sprite):
             # if the mouse is down when hovering over an item in the shop, it will wait until mouse not down, and attempt to buy that item
             if money >= self.cost:
                 if mouse_xy[0] >= self.rect.x and mouse_xy[0] < self.rect.x+self.rect.width and mouse_xy[1] >= self.rect.y and mouse_xy[1] < self.rect.y+self.rect.height:
+                    # hovering_on_tower used to determine whether to show tower stats
+                    self.hovering_on_tower = True
                     if pygame.mouse.get_pressed()[0] and not self.clicked:
                         self.clicked = True
                     elif not pygame.mouse.get_pressed()[0] and self.clicked:
                         self.clicked = False
                         return True, self.cost
+                else:
+                    self.hovering_on_tower = False
         return False, 0
     
     # if the user bought a tower from the shop, it will follow the mouse until placed
@@ -398,8 +404,8 @@ class Shop(pygame.sprite.Sprite):
         mask1 = pygame.mask.from_surface(self.image)
         mask2 = pygame.mask.from_surface(path)
     
-        offset_x = map_offsets[0] - self.rect.left
-        offset_y = map_offsets[1] - self.rect.top
+        offset_x = map_offsets[0] - self.rect.left # type: ignore
+        offset_y = map_offsets[1] - self.rect.top # type: ignore
 
         colliding = mask1.overlap(mask2, (offset_x, offset_y))
         
@@ -408,40 +414,42 @@ class Shop(pygame.sprite.Sprite):
             self.clicked = True
         elif not pygame.mouse.get_pressed()[0] and self.clicked:
             self.clicked = False
-            towers.add(Towers(self.shop, self.rect.centerx, self.rect.centery))
+            towers.add(Towers(self.shop, self.rect.centerx, self.rect.centery)) # type: ignore
             self.rect.centerx = self.original_x
             self.rect.centery = self.original_y
             return False
         
         return True
     
-def stats(money, hp):
+    def show_stats(self):
+        if self.hovering_on_tower:
+            pass
+            
+
+    
+def stats(money : int, hp : int):
     text = stat_font.render(f'Money: ${money}', True, "black")
     screen.blit(text, (5, 0))
     text = stat_font.render(f'Health: {hp}', True, "black")
     screen.blit(text, (5, 35))
 
-
-path, movement_nodes, map_offsets = map("path1")
-
-
 # defines the towers group
-towers = pygame.sprite.Group()
+towers = pygame.sprite.Group() # type: ignore
 
-towers.add(Towers("basic", 640, 360))
+towers.add(Towers("basic", 640, 360)) # type: ignore
 
-tower_projectiles = pygame.sprite.Group()
+tower_projectiles = pygame.sprite.Group() # type: ignore
 
 # defines the enemies group
-enemies = pygame.sprite.Group()
+enemies = pygame.sprite.Group() # type: ignore
 
 #enemies.add(Enemies("basic", 8, 280))
 
 # defines the shop group
-shop = pygame.sprite.Group()
+shop = pygame.sprite.Group() # type: ignore
 
-shop.add(Shop("panel", 640, 900))
-shop.add(Shop("basic", 100, 540))
+shop.add(Shop("panel", 640, 900)) # type: ignore
+shop.add(Shop("basic", 100, 540)) # type: ignore
  
 # and so begins the main script
 x = 0
@@ -457,34 +465,34 @@ while running:
 
     mouse_xy = pygame.mouse.get_pos()
 
-    for sprite in tower_projectiles:
-        sprite.move()
+    for sprite in tower_projectiles: # type: ignore
+        sprite.move() # type: ignore
 
     # cycles through all the necessary commands for the towers group
-    for sprite in towers:
-        sprite.wait += 1
-        sprite.find_closest_enemy()
+    for sprite in towers: # type: ignore
+        sprite.wait += 1 # type: ignore
+        sprite.find_closest_enemy() # type: ignore
         #sprite.shoot()
-        sprite.unfire()
-        sprite.rotate()
+        sprite.unfire() # type: ignore
+        sprite.rotate() # type: ignore
 
     # cycles through all the necessary commands for the enemies group
-    for sprite in enemies:
-        hp -= sprite.pathfind()
+    for sprite in enemies: # type: ignore
+        hp -= int(sprite.pathfind()) # type: ignore
 
     # cycles through all the necessary commands for the shop group
-    for sprite in shop:
+    for sprite in shop: # type: ignore
         # only runs hovering function for the panel type in the shop group
-        if sprite.shop == "panel":
-            open = sprite.hovering()
+        if sprite.shop == "panel": # type: ignore
+            open = bool(sprite.hovering()) # type: ignore
         # runs normally for all other types in the shop group
         else:
             if not placing_tower:
-                temp_pkg = sprite.showing(open)
-                placing_tower = temp_pkg[0]
-                money -= temp_pkg[1]
+                temp_pkg : list[bool|int] = sprite.showing(open) # type: ignore
+                placing_tower = bool(temp_pkg[0]) # type: ignore
+                money -= int(temp_pkg[1]) # type: ignore
             else:
-                placing_tower = sprite.place_tower()
+                placing_tower = bool(sprite.place_tower()) # type: ignore
 
     # draws the enemies on the screen
     enemies.draw(screen)
@@ -494,8 +502,8 @@ while running:
     x += 1
     if x > 100:
         #enemies.add(Enemies("basic", 8, 280))
-        enemies.add(Enemies("tank", 8, 280))
-        x = 0
+        enemies.add(Enemies("basic", 8, 280)) # type: ignore
+        x = 80
 
     #print(len(enemies))
 
