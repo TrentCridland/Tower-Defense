@@ -19,10 +19,14 @@ def enemy_constants() -> list[list[str|int|float]]:
     ]
 
 def tower_constants() -> list[list[str|int]]:
-    # [A, B, C, D, E]
-    # replace A with type, B with dmg, C with cd, D with rotation speed, E with cost
-    basic : list[str|int] = ["basic", 1, 60, 100, 100]
+    # [A, B, C, D, E, F]
+    # replace A with type, B with dmg, C with cd, D with range, E with rotation speed, F with cost
+    basic : list[str|int] = ["basic", 1, 60, 400, 100, 100]
 
     return [
         basic
     ]    
+
+from image_loader import load_images
+
+load_images()

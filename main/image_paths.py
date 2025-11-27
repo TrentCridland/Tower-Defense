@@ -21,9 +21,14 @@ def tower_image_path_list(tower_type_number : int):
     ]
 
 def shop_image_path(shop_type_number : int):
+    # path to the shops image
     image_folder = Path("main/shop_images")
     image_path = str(list(image_folder.glob("*ui.png"))[shop_type_number])
-        #image_path = str(list(image_folder.glob("*shopui.png"))[0])
-    
+
+    return image_path
+
+def upgrade_image_path(upgrade_type_number : int):
+    image_folder = Path("main/upgrade_images")
+    image_path = str(list(image_folder.glob("*ui.png"))[upgrade_type_number])
 
     return image_path
