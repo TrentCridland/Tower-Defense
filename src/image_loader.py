@@ -15,6 +15,12 @@ class EnemyType(Enum):
 # enum of all towers
 class TowerType(Enum):
     BASIC = 0
+    DOUBLE = 1
+
+# how many images to load for each tower
+class ImagesPerTower(Enum):
+    BASIC = 3
+    DOUBLE = 4
 
 # enum of all shop items
 class ShopType(Enum):
@@ -43,13 +49,13 @@ def load_images():
     for enum in TowerType:
         temp_tower_list : list[pygame.Surface] = []
         loop -= 1
-        # loads all 3 images for a certain tower
-        for i in range(3): # type: ignore
+        # loads all images for a certain tower
+        for i in range(ImagesPerTower[enum.name].value): # type: ignore
             temp_tower_list += [pygame.image.load(tower_image_paths[enum.value+loop])]
             loop += 1
         
         tower_list[enum] = temp_tower_list # adds all the 3 tower images in one dict
-
+        
     shop_image_paths = sorted(image_paths("shop")) # list of all shop image paths
     shop_list : dict[Enum, pygame.Surface] = {} # dict of all shop images
 
