@@ -4,7 +4,7 @@ from tower_aiming import point_enemy
 from mouse import mouse_info
 from enemy import enemies #type: ignore
 
-tower_images = load_tower_images
+tower_images = load_tower_images()
 
 # defines the towers group
 towers = pygame.sprite.Group() # type: ignore
