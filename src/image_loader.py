@@ -1,6 +1,7 @@
 import pygame
 from enum import Enum
 from pathlib import Path
+import os
 
 # finds the image paths
 def image_paths(type : str):
@@ -37,22 +38,7 @@ def load_enemy_images():
 
 # loads tower images
 def load_tower_images():
-    tower_image_paths = sorted(image_paths("tower")) # list of all tower image paths
-    tower_list : dict[Enum, list[pygame.Surface]] = {} # dict of all tower images
-
-    loop = 1
-    # loads all the tower images
-    for enum in TowerType:
-        loop -= 1
-        temp_tower_list : list[pygame.Surface] = []
-        # loads all images for a certain tower
-        for i in range(ImagesPerTower[enum.name].value): # type: ignore
-            temp_tower_list += [pygame.image.load(tower_image_paths[enum.value+loop])]
-            loop += 1
-        
-        tower_list[enum] = temp_tower_list # adds all the 3 tower images in one dict
-    
-    return tower_list
+    return {types: [pygame.image.load(paths) for paths in list(Path(f"assets/tower_images/{types.name.lower()}/").glob("*.png"))] for types in TowerType}
 
 # loads shop images
 def load_shop_images():
